@@ -18,20 +18,23 @@ from utils.options import args_parser
 
 args = args_parser()
 # learning_rates = np.array([0.7, 0.8, 0.9, 1, 1.1,10,100,1000])*1e-3
-learning_rates=np.array([10000,20000])*1e-5*args.factor
+learning_rates=np.array([10000,1000,100,10,1])*1e-5*args.factor
 # learning_rates=np.array([0.2])
 # print(learning_rates)
 # exit()
 
 def train(epoch, img_path, target_path, transforms, net, criterion):
+    batch_size=args.batch_size
     train_dataset = selfData(img_path, target_path, transforms)
     data_size=len(train_dataset)
-    train_loader = DataLoader(train_dataset, batch_size = 64,  num_workers =16,drop_last= False,pin_memory=True,shuffle=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size = batch_size,  num_workers =16,drop_last= False,pin_memory=True,shuffle=True,collate_fn=collate_fn)
     # train_loader=list(train_loader)
-    epoch_size=data_size//64
+    epoch_size=data_size//batch_size
+    print(torch.cuda.device_count())
+    # exit()
     net = torch.nn.DataParallel(net)
     net=net.cuda()
-    if data_size%64 !=0:
+    if data_size%batch_size !=0:
         epoch_size+=1
 
     # torch.multiprocessing.set_start_method('spawn')
@@ -55,6 +58,7 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
             # batch_iter=iter(train_loader)
             # sum=0
             for i in tqdm(range(epoch_size)):
+                # inputs,labels=next(batch_iter)
                 inputs, labels = prefetcher.next()
                 labels = list(map(int, labels))
                 # sum+=len(labels)
@@ -65,6 +69,8 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
                 optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
                 optimizer.zero_grad()
                 outputs = net(inputs)
+                # print(outputs.shape,labels.shape)
+                # exit()
                 loss = criterion(outputs, labels.long())
                 loss.backward()
                 optimizer.step()
@@ -79,7 +85,9 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
                     best_ep=ep
                     best_lr=tmp_lr
                 # if dist.get_rank()==0:
-                PATH = './weights/' + args.model +"_"+repr(ep+1)+"_"+repr(tmp_lr) +'.pth'
+
+                PATH = './weights/' + args.model  + "_" + repr(ep + 1) + "_" + repr(
+                        tmp_lr) + '.pth'
                 torch.save(net.state_dict(), PATH)
                 print("accuracy: {}...".format(accuracy))
                 print("best_ep:{}\tbest_lr:{}\tbest_acc:{}".format(best_ep, best_lr, best_acc))

@@ -15,13 +15,13 @@ class carNet(nn.Module):
                                    nn.MaxPool2d(2,stride=2)
                                    )
 
-        self.classifier=nn.Sequential(nn.Dropout(0.8),
+        self.classifier=nn.Sequential(nn.Dropout(0.5),
                                       nn.Linear(6*6*384,4096),
                                       nn.ReLU(),
-                                      nn.Dropout(0.8),
+                                      nn.Dropout(0.5),
                                       nn.Linear(4096,4096),
                                       nn.ReLU(),
-                                      nn.Dropout(0.8),
+                                      nn.Dropout(0.5),
                                       nn.Linear(4096,2))
     def forward(self,x):
         x=self.feature(x)

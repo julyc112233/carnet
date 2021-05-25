@@ -19,10 +19,10 @@ def arg_parser():
     parser.add_argument('--test_lab', type=str, default="/Users/julyc/Downloads/splits/CNRPark-EXT/all.txt")
     parser.add_argument('--save_path',type=str,default="./data/visualize/")
     parser.add_argument('--net',type=str,default="carnet")
-    parser.add_argument('--weight_path',type=str,default="/Users/julyc/PycharmProjects/parking_lot_occupancy_detection/weights/carnet.pth")
+    parser.add_argument('--weight_path',type=str,default="/Users/julyc/PycharmProjects/parking_lot_occupancy_detection/carnet (1).pth")
     parser.add_argument("--days",type=int,default=2)
     parser.add_argument("--img_perday",type=int,default=2)
-    parser.add_argument('--cuda_device', type=int, default=5)
+    parser.add_argument('--cuda_device', type=int, default=3)
     parser.add_argument('--img_size',type=int,default=54)
     args = parser.parse_args()
     return args
@@ -128,12 +128,16 @@ def solve(cameras,net,img_loader,save_path):
 
 
 if __name__=="__main__":
-    test_img=selfData(args.test_img,args.test_lab)
+    test_img=selfData(args.test_img,args.test_lab,slot_id=True)
     save_path=args.save_path+args.net
+
     if args.net=="carnet":
         net=carNet()
     elif args.net=="mAlexNet":
         net=mAlexNet()
+    net.load_state_dict({k.replace('module.', ''): v for k, v in torch.load(args.weight_path, map_location="cpu").items()})
+    if torch.cuda.is_available():
+        net.cuda(args.cuda_device)
     for index in range(1,10):
         str="camera"+repr(index)
         print("camera:", index)

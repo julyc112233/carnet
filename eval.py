@@ -1,11 +1,12 @@
 from torch.autograd import Variable
 import os.path as osp
-from utils.dataloader import selfData, collate_fn,Compose
+from utils.dataloader import selfData, collate_fn
 import torch
 import torch.nn as nn
 from model.malexnet import mAlexNet
 from model.alexnet import AlexNet
 from model.carnet import carNet
+from model.stn_shuf import stn_shufflenet
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision
@@ -16,12 +17,12 @@ from tqdm import tqdm
 import os
 import cv2
 import torch.nn.functional as F
+from ssdaugumentations import *
+from tqdm import tqdm
+import torch.nn.functional as F
+import cv2
 args = args_parser()
-transforms = transforms.Compose([
-        transforms.ToTensor(),  # normalize to [0, 1]
-        transforms.Resize((args.img_size,args.img_size)),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
+transforms=Basetransform(size=args.img_size)
 def eval(img_path,target_path, net,str="rainy"):
     print("\nTesting starts now...")
 
@@ -81,7 +82,12 @@ def eval(img_path,target_path, net,str="rainy"):
 
 if __name__=="__main__":
 
-    net=carNet()
+    if args.model=="carnet":
+        net=carNet()
+    elif args.model=="mAlexNet":
+        net=mAlexNet()
+    elif args.model=='stn_shuf':
+        net=stn_shufflenet(use_transformer=args.use_transformer)
     net.load_state_dict({k.replace('module.',''):v for k,v in torch.load(args.path,map_location="cpu").items()})
     if torch.cuda.is_available():
         net.cuda(args.cuda_device)

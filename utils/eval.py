@@ -1,4 +1,3 @@
-from torch.autograd import Variable
 import os.path as osp
 from utils.dataloader import selfData, collate_fn,Compose
 import torch
@@ -10,18 +9,17 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision
 from torchvision import transforms
-from utils.options import args_parser
+
 import numpy as np
 from tqdm import tqdm
 import os
 import cv2
 import torch.nn.functional as F
+from utils.options import args_parser
+from torch.autograd import Variable
 args = args_parser()
-transforms = transforms.Compose([
-        transforms.ToTensor(),  # normalize to [0, 1]
-        transforms.Resize((args.img_size,args.img_size)),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
+from ssdaugumentations import *
+transforms=Basetransform(size=args.img_size)
 def eval(img_path,target_path, net,str="rainy"):
     print("\nTesting starts now...")
 

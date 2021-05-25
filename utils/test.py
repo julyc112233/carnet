@@ -12,15 +12,12 @@ import torchvision
 from torchvision import transforms
 from torch.utils.data.distributed import DistributedSampler
 from utils.options import args_parser
+from ssdaugumentations import *
 from tqdm import tqdm
 import torch.nn.functional as F
 import cv2
 args = args_parser()
-transforms = transforms.Compose([
-        transforms.ToTensor(),  # normalize to [0, 1]
-        transforms.Resize((args.img_size,args.img_size)),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
+transforms=Basetransform(size=args.img_size)
 def test(img_path,target_path, transforms, net):
     print("\nTesting starts now...")
 
@@ -45,6 +42,7 @@ def test(img_path,target_path, transforms, net):
             # print("Testing on batch {}".format(item))
             labels = list(map(int, labels))
             labels = torch.Tensor(labels)
+
             if torch.cuda.is_available():
                 images = images.cuda()
                 labels = labels.cuda()
