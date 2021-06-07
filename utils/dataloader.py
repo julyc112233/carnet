@@ -32,6 +32,9 @@ class selfData:
             img_path = self.img_list[index]
             # img = jpeg.JPEG(img_path).decode()
             img=cv2.imread(img_path)
+            # if img is not None:
+            #     img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+            #     img[:, :, 0] = 100
             img = self.transforms(img)
             label = self.label_list[index]
         except:
@@ -43,6 +46,9 @@ class selfData:
 
     def pull_img(self,index):
         im=cv2.imread(self.img_list[index],cv2.IMREAD_COLOR)
+        # if im is not None:
+        #     im = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
+        #     im[:, :, 0] = 100
         # print(self.img_list[index])
         return im
     def pull_label(self,index):

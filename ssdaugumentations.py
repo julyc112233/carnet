@@ -303,8 +303,9 @@ class Basetransform(object):
         self.mean = mean
         self.size = size
         self.augment = Compose([
-            Resize(self.size),
-            ToTensor()
+            ToTensor(),
+            Resize((self.size,self.size)),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             # ToPercentCoords(),
             # SubtractMeans(self.mean)
         ])

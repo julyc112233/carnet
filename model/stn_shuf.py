@@ -27,7 +27,7 @@ class stn_shufflenet(nn.Module):
             nn.ReLU(True)
         )
 
-        # 3 * 2 affine矩阵的回归量
+        # 3 * 2 affine矩阵的回归量x
         self.fc_loc = nn.Sequential(
             nn.Linear(36 * 10 * 10, 32),
             nn.ReLU(True),

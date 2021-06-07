@@ -1,5 +1,5 @@
 import os.path as osp
-from utils.dataloader import selfData, collate_fn,Compose
+from utils.dataloader import selfData, collate_fn
 import torch
 import torch.nn as nn
 from model.malexnet import mAlexNet

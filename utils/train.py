@@ -18,7 +18,7 @@ from utils.options import args_parser
 
 args = args_parser()
 # learning_rates = np.array([0.7, 0.8, 0.9, 1, 1.1,10,100,1000])*1e-3
-learning_rates=np.array([10000,1000,100,10,1])*1e-5*args.factor
+learning_rates=np.array([10])*1e-5*args.factor
 # learning_rates=np.array([0.2])
 # print(learning_rates)
 # exit()
@@ -30,7 +30,7 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
     train_loader = DataLoader(train_dataset, batch_size = batch_size,  num_workers =16,drop_last= False,pin_memory=True,shuffle=True,collate_fn=collate_fn)
     # train_loader=list(train_loader)
     epoch_size=data_size//batch_size
-    print(torch.cuda.device_count())
+    print(args.cuda_device)
     # exit()
     net = torch.nn.DataParallel(net)
     net=net.cuda()
@@ -57,7 +57,7 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
             prefetcher=data_prefetcher(train_loader)
             # batch_iter=iter(train_loader)
             # sum=0
-            for i in tqdm(range(epoch_size)):
+            for i in range(epoch_size):
                 # inputs,labels=next(batch_iter)
                 inputs, labels = prefetcher.next()
                 labels = list(map(int, labels))
@@ -76,8 +76,9 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
                 optimizer.step()
                 running_loss += loss.item()
             print("Epoch {}.\tLoss = {:.3f}.\tlr={}\t....".format(ep + 1, running_loss, tmp_lr))
-            if (ep+1) % 20==0:
-                accuracy = test(args.test_img, args.test_lab, transforms, net)
+            if (ep+1) % 2==0:
+
+                accuracy = test(args.test_img, args.test_lab, net)
                 running_loss = 0.0
                 if accuracy>best_acc:
                     best_net=copy.deepcopy(net)
@@ -86,9 +87,9 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
                     best_lr=tmp_lr
                 # if dist.get_rank()==0:
 
-                PATH = './weights/' + args.model  + "_" + repr(ep + 1) + "_" + repr(
-                        tmp_lr) + '.pth'
-                torch.save(net.state_dict(), PATH)
+#                 PATH = './weights/' + args.model  + "_" + repr(ep + 1) + "_" + repr(
+#                         tmp_lr) + '.pth'
+#                 torch.save(net.state_dict(), PATH)
                 print("accuracy: {}...".format(accuracy))
                 print("best_ep:{}\tbest_lr:{}\tbest_acc:{}".format(best_ep, best_lr, best_acc))
     # if dist.get_rank() == 0:

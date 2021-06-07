@@ -7,6 +7,7 @@ from model.malexnet import mAlexNet
 from model.alexnet import AlexNet
 from model.carnet import carNet
 from model.stn_shuf import stn_shufflenet
+from model.stn_trans_shuf import stn_trans_shufflenet
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision
@@ -22,7 +23,34 @@ from tqdm import tqdm
 import torch.nn.functional as F
 import cv2
 args = args_parser()
-transforms=Basetransform(size=args.img_size)
+device=int(args.cuda_device)
+# if args.eval_data=="PKLot":
+#     minetransforms = torchvision.transforms.Compose([
+#         transforms.ToTensor(),  # normalize to [0, 1]
+#         transforms.Resize((args.img_size,args.img_size)),
+#         # transforms.ColorJitter(),
+#         transforms.Normalize(mean=[0.3708, 0.3936, 0.3976],
+#                              std=[0.0152, 0.0115, 0.0250]),
+#         # transforms.Normalize(mean=[0.3518, 0.4025, 0.4123],
+#         #                      std=[0.0744, 0.0760, 0.0752)])
+#     ])
+# elif args.eval_data=='cnrext':
+#     minetransforms = torchvision.transforms.Compose([
+#         transforms.ToTensor(),  # normalize to [0, 1]
+#         transforms.Resize((args.img_size, args.img_size)),
+#         # transforms.ColorJitter(),
+#         # transforms.Normalize(mean=[0.4993, 0.5231, 0.5268],
+#         #                      std=[0.0744, 0.0785, 0.0776]),
+#         transforms.Normalize(mean=[0.3450, 0.3949, 0.4050],
+#                              std=[0.0209, 0.0064, 0.0152]),
+#     ])
+minetransforms = torchvision.transforms.Compose([
+        transforms.ToTensor(),  # normalize to [0, 1]
+        transforms.Resize((args.img_size,args.img_size)),
+        # transforms.ColorJitter(),
+        transforms.Normalize(mean=[0.5,0.5,0.5],
+                             std=[0.5, 0.5, 0.5])
+    ])
 def eval(img_path,target_path, net,str="rainy"):
     print("\nTesting starts now...")
 
@@ -46,11 +74,10 @@ def eval(img_path,target_path, net,str="rainy"):
             label=test_dataset.pull_label(i)
             label=int(label)
 
-            x=transforms(image)
+            x=minetransforms(image)
             x=Variable(x.unsqueeze(0))
             if torch.cuda.is_available():
-                device = torch.device(args.cuda_device)
-                x = x.to(device)
+                x=x.cuda(device)
                 # print(x.shape)
             y=net(x)
             _,predicted=torch.max(y,1)
@@ -87,10 +114,14 @@ if __name__=="__main__":
     elif args.model=="mAlexNet":
         net=mAlexNet()
     elif args.model=='stn_shuf':
-        net=stn_shufflenet(use_transformer=args.use_transformer)
+        net=stn_shufflenet()
+    elif args.model=='stn_trans_shuf':
+        net=stn_trans_shufflenet()
+    elif args.model=='shuf':
+        net=torchvision.models.shufflenet_v2_x1_0(pretrained=False,num_classes=2)
     net.load_state_dict({k.replace('module.',''):v for k,v in torch.load(args.path,map_location="cpu").items()})
     if torch.cuda.is_available():
-        net.cuda(args.cuda_device)
+        net.cuda(device)
     acc=eval(args.test_img,args.test_lab,net,args.eval_data)
     # print(args.path)
 

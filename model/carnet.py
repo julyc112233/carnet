@@ -1,5 +1,10 @@
 import torch
 import torch.nn as nn
+import cv2
+import torchvision
+from torch.autograd import Variable
+import torchvision.transforms as transforms
+
 
 class carNet(nn.Module):
     def __init__(self, num_classes = 2):
@@ -16,7 +21,7 @@ class carNet(nn.Module):
                                    )
 
         self.classifier=nn.Sequential(nn.Dropout(0.5),
-                                      nn.Linear(6*6*384,4096),
+                                      nn.Linear(7*7*384,4096),
                                       nn.ReLU(),
                                       nn.Dropout(0.5),
                                       nn.Linear(4096,4096),
@@ -32,3 +37,13 @@ class carNet(nn.Module):
         m = nn.Softmax(dim=1)
         x = m(x)
         return x
+# transforms = torchvision.transforms.Compose([
+#         transforms.ToTensor(),  # normalize to [0, 1]
+#         transforms.Resize((56,56)),
+#         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+#     ])
+# img=cv2.imread("../example.jpg")
+# x=transforms(img)
+# x=Variable(x.unsqueeze(0))
+# net=carNet()
+# out=net(x)
