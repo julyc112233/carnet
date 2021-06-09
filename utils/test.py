@@ -47,8 +47,8 @@ minetransforms = torchvision.transforms.Compose([
         transforms.ToTensor(),  # normalize to [0, 1]
         transforms.Resize((args.img_size,args.img_size)),
         # transforms.ColorJitter(),
-        transforms.Normalize(mean=[0.5,0.5,0.5],
-                             std=[0.5, 0.5, 0.5])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
     ])
 def test(img_path,target_path, net,transforms=minetransforms,device=int(args.cuda_device)):
     print("\nTesting starts now...",type(device),device)

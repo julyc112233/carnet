@@ -30,10 +30,14 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
     train_loader = DataLoader(train_dataset, batch_size = batch_size,  num_workers =16,drop_last= False,pin_memory=True,shuffle=True,collate_fn=collate_fn)
     # train_loader=list(train_loader)
     epoch_size=data_size//batch_size
+    # print("test1")
     print(args.cuda_device)
     # exit()
     net = torch.nn.DataParallel(net)
+    # print("tests")
     net=net.cuda()
+    # print("test2")
+
     if data_size%batch_size !=0:
         epoch_size+=1
 
@@ -42,12 +46,18 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
     best_acc=0
     best_ep=0
     tmp_net=copy.deepcopy(net)
+    # print("test3")
+
     net.train()
     best_lr=0
+    # print("test4")
+
     for lr in learning_rates:
+        # print("test5")
         net=copy.deepcopy(tmp_net)
         tmp_lr = lr.copy()
         for ep in range(epoch):
+            # print("test6")
             net.train()
 
             # if ep %args.ep_lr_decay==0 and ep>0:
@@ -57,6 +67,7 @@ def train(epoch, img_path, target_path, transforms, net, criterion):
             prefetcher=data_prefetcher(train_loader)
             # batch_iter=iter(train_loader)
             # sum=0
+            # print("test")
             for i in range(epoch_size):
                 # inputs,labels=next(batch_iter)
                 inputs, labels = prefetcher.next()

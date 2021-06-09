@@ -1,18 +1,19 @@
 #!/usr/bin/python3
 import os
+
+# import model.SqueezeNet
+
+# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 # os.environ['MASTER_PORT'] = '8888'
 # os.environ['MASTER_ADDR'] = '120.27.217.156'
-import random
-
 from utils.options import args_parser
+from model.stn_shuf import stn_shufflenet
+from model.stn_trans_shuf import stn_trans_shufflenet
 from utils.imshow import imshow
 from model.malexnet import mAlexNet
 from model.alexnet import AlexNet
 from model.carnet import carNet
-from model.stn_shuf import stn_shufflenet
-from model.stn_trans_shuf import stn_trans_shufflenet
-from model.trans_shuf import trans_shufflenet
-# from ssdaugumentations import *
+import torchvision.models as models
 import torch.distributed as dist
 from utils.dataloader import selfData
 from utils.train import train
@@ -38,7 +39,6 @@ args = args_parser()
 # dist.init_process_group(backend='nccl')
 # torch.cuda.set_device(args.local_rank)
 os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_device
-
 def xavier(param):
     init.xavier_uniform(param)
 
@@ -46,81 +46,89 @@ def weights_init(m):
     if isinstance(m, nn.Conv2d):
         xavier(m.weight.data)
         m.bias.data.zero_()
-
-# if args.train_data=="PKLot":
-#     print(args.train_data)
-#     transforms = torchvision.transforms.Compose([
+#初试代码
+# transforms = transforms.Compose([
 #         transforms.ToTensor(),  # normalize to [0, 1]
-#         transforms.Resize((args.img_size,args.img_size)),
-#         transforms.ColorJitter(),
-#         transforms.Normalize(mean=[0.3708, 0.3936, 0.3976],
-#                              std=[0.0152, 0.0115, 0.0250])
+#         transforms.Resize(256),
+#         transforms.RandomResizedCrop(args.img_size),
+#         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 #     ])
-# elif args.train_data=='cnrext':
-#     print(args.train_data)
-#     transforms = torchvision.transforms.Compose([
-#         transforms.ToTensor(),  # normalize to [0, 1]
-#         transforms.Resize((args.img_size, args.img_size)),
-#         transforms.ColorJitter(),
-#         # transforms.Normalize(mean=[0.4993, 0.5231, 0.5268],
-#         #                      std=[0.0744, 0.0785, 0.0776]),
-#         transforms.Normalize(mean=[0.3450, 0.3949, 0.4050],
-#                              std=[0.0209, 0.0064, 0.0152]),
-#     ])
-
-transforms = torchvision.transforms.Compose([
+#预训练代码
+transforms = transforms.Compose([
         transforms.ToTensor(),  # normalize to [0, 1]
-        transforms.Resize((args.img_size,args.img_size)),
-        transforms.ColorJitter(),
-        transforms.Normalize(mean=[0.485,0.456,0.406],
-                             std=[0.229, 0.224, 0.225])
+        transforms.Resize(224),
+        transforms.RandomResizedCrop(224),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        #                          std=[0.229, 0.224, 0.225])
     ])
 
 
-def setup_seed(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-
-
-# 设置随机数种子
-setup_seed(20)
 
 if __name__=="__main__":
 
     print("load_net...")
-
     if args.model == 'mAlexNet':
         net = mAlexNet()
     elif args.model == 'AlexNet':
         net = AlexNet()
     elif args.model == "carnet":
         net=carNet()
+    elif args.model=="googlenet":
+        net=models.googlenet()
+        num_fc = net.fc.in_features
+        net.fc = nn.Linear(num_fc, 2)
+    elif args.model=="vgg16":
+        net=models.vgg16(pretrained=True)
+        num_fc = net.classifier[6].in_features
+        net.classifier[6] = torch.nn.Linear(num_fc, 2)
+        for param in net.parameters():
+            param.requires_grad = False
+        # 但是参数全部固定了，也没法进行学习，所以我们不固定最后一层，即全连接层
+        for param in net.classifier[6].parameters():
+            param.requires_grad = True
+    elif args.model=="Inception_v3":
+        net=models.inception_v3()
+        net.AuxLogits.fc=nn.Linear(768,2)
+        net.fc = nn.Linear(2048, 2)
+        net.aux_logits=False
+        # net=net.cuda()
+    elif args.model=="mobilenet_v3_small":
+        net=models.mobilenet_v3_small()
+        net.classifier[3]=nn.Linear(1024,2)
+        # net.fc = nn.Linear(num_fc, 2)
+    elif args.model=="mobilenet_v3_large":
+        net = models.mobilenet_v3_large()
+        net.classifier[3] = nn.Linear(1280, 2)
+    elif args.model=="ShuffleNet_v2":
+        net=models.shufflenet_v2_x1_0()
+        net.fc=nn.Linear(1024,2)
+    elif args.model == "mobilenet_v2":
+        net = models.mobilenet_v2()
+        net.classifier[1] = nn.Linear(1280, 2)
     elif args.model=='stn_shuf':
         net=stn_shufflenet()
     elif args.model=='stn_trans_shuf':
         net=stn_trans_shufflenet()
     elif args.model=='shuf':
         net=torchvision.models.shufflenet_v2_x1_0(pretrained=False,num_classes=2)
-    elif args.model=='trans_shuf':
-        net=trans_shufflenet(shuff_type=args.shuf_type)
-        # print(args.shuf_type)
+
+
+
     # net = net.cuda()
     # for name, parameters in net.named_parameters():
     #     print(name, ':', parameters.size())
     # exit()
-    print("weight init..")
-    weights_init(net)
-    criterion = nn.CrossEntropyLoss()
 
-    # weight_path = "/home/zengweijia/.jupyter/cnrpark/parking_lot_occupancy_detection/weights/carnet_60_0.001.pth"
-    # net.load_state_dict({k.replace('module.', ''): v for k, v in torch.load(weight_path, map_location="cpu").items()})
+    print("weight init..")
+
+    # weights_init(net)
+    criterion = nn.CrossEntropyLoss()
     if args.path == '':
-        net=train(args.epochs, args.train_img, args.train_lab, transforms=transforms, net=net, criterion=criterion)
+        print(args.model)
+        net=train(args.epochs, args.train_img, args.train_lab, transforms, net, criterion)
         # net=train(args.epochs, args.train_img, args.train_lab, transforms, net, criterion)
-        PATH = './weights/'+args.model+'_'+args.shuf_type+'_'+args.train_data+'.pth'
+        PATH = './weights/'+args.model+'.pth'
         torch.save(net.state_dict(), PATH)
     else:
         PATH = args.path

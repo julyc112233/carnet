@@ -24,32 +24,13 @@ import torch.nn.functional as F
 import cv2
 args = args_parser()
 device=int(args.cuda_device)
-# if args.eval_data=="PKLot":
-#     minetransforms = torchvision.transforms.Compose([
-#         transforms.ToTensor(),  # normalize to [0, 1]
-#         transforms.Resize((args.img_size,args.img_size)),
-#         # transforms.ColorJitter(),
-#         transforms.Normalize(mean=[0.3708, 0.3936, 0.3976],
-#                              std=[0.0152, 0.0115, 0.0250]),
-#         # transforms.Normalize(mean=[0.3518, 0.4025, 0.4123],
-#         #                      std=[0.0744, 0.0760, 0.0752)])
-#     ])
-# elif args.eval_data=='cnrext':
-#     minetransforms = torchvision.transforms.Compose([
-#         transforms.ToTensor(),  # normalize to [0, 1]
-#         transforms.Resize((args.img_size, args.img_size)),
-#         # transforms.ColorJitter(),
-#         # transforms.Normalize(mean=[0.4993, 0.5231, 0.5268],
-#         #                      std=[0.0744, 0.0785, 0.0776]),
-#         transforms.Normalize(mean=[0.3450, 0.3949, 0.4050],
-#                              std=[0.0209, 0.0064, 0.0152]),
-#     ])
+
 minetransforms = torchvision.transforms.Compose([
         transforms.ToTensor(),  # normalize to [0, 1]
         transforms.Resize((args.img_size,args.img_size)),
         # transforms.ColorJitter(),
-        transforms.Normalize(mean=[0.5,0.5,0.5],
-                             std=[0.5, 0.5, 0.5])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
     ])
 def eval(img_path,target_path, net,str="rainy"):
     print("\nTesting starts now...")

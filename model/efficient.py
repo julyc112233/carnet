@@ -16,7 +16,7 @@ class ViT(nn.Module):
             nn.Linear(patch_dim, dim),
         )
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches , dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.transformer = transformer
 
@@ -42,7 +42,10 @@ class ViT(nn.Module):
     #     return self.mlp_head(x)
     def forward(self, img):
         x = self.to_patch_embedding(img)
+
         b, n, _ = x.shape
+        # print(x.shape)
+        # print(self.pos_embedding.shape)
         x += self.pos_embedding[:, :(n)]
         x = self.transformer(x)
         return x
